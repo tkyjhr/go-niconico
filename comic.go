@@ -13,6 +13,10 @@ import (
 	"golang.org/x/net/html/atom"
 )
 
+var (
+	jst = time.FixedZone("Asia/Tokyo", 9*60*60)
+)
+
 type Comic struct {
 	ID          string
 	Title       string
@@ -30,6 +34,14 @@ func (c Comic) GetMainURL() string {
 		return ""
 	}
 	return "http://seiga.nicovideo.jp/comic/" + c.ID
+}
+
+func (c Comic) GetStartDateString() string {
+	return c.Start.In(jst).Format("2006年01月02日")
+}
+
+func (c Comic) GetUpdateDateString() string {
+	return c.Update.In(jst).Format("2006年01月02日")
 }
 
 func (c Comic) GetFirstEpisodeURL() string {
@@ -100,13 +112,13 @@ func (c *Comic) Get(client *http.Client) error {
 		year, _ := strconv.Atoi(startDateMatchStrings[1])
 		month, _ := strconv.Atoi(startDateMatchStrings[2])
 		date, _ := strconv.Atoi(startDateMatchStrings[3])
-		c.Start = time.Date(year, time.Month(month), date, 0, 0, 0, 0, time.Local)
+		c.Start = time.Date(year, time.Month(month), date, 0, 0, 0, 0, jst)
 
 		updateDateMatchStrings := regexp.MustCompile(`(\d{4})年(\d{1,2})月(\d{1,2})日更新`).FindStringSubmatch(metaInfoNodeText)
 		year, _ = strconv.Atoi(updateDateMatchStrings[1])
 		month, _ = strconv.Atoi(updateDateMatchStrings[2])
 		date, _ = strconv.Atoi(updateDateMatchStrings[3])
-		c.Update = time.Date(year, time.Month(month), date, 0, 0, 0, 0, time.Local)
+		c.Update = time.Date(year, time.Month(month), date, 0, 0, 0, 0, jst)
 	}
 
 	if episodeListNode, ok := scrape.Find(root, func(node *html.Node) bool {
